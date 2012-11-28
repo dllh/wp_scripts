@@ -55,7 +55,7 @@ foreach ( $items as $item ) {
 		$post_parent = $matches[1];
 
 	if ( $post_id > 0 ) {
-		$query = sprintf( "UPDATE wp_posts SET post_parent = %d WHERE post_id = %d\n", $post_parent, $post_id );
+		$query = sprintf( "UPDATE wp_posts SET post_parent = %d WHERE post_id = %d;\n", $post_parent, $post_id );
 
 		if ( $check_post_whitelist ) {
 			if ( in_array( $post_parent, $affected_posts ) )
