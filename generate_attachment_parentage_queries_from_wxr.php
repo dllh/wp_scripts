@@ -29,8 +29,6 @@ $export_file = isset( $argv[1] ) && file_exists( $argv[1] ) ? $argv[1] : '';
 if ( '' == $export_file )
 	die( "\nPlease specify a WXR file as an argument.\n" );
 
-$attachments = array();
-
 $lines = file_get_contents( $export_file );
 $items = explode( '<item>', $lines );
 
