@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# TODO: Feeds
-# TODO: Whois
 # TODO: Who owns an IP?
 # TODO: Arin?
 # TODO: Interpret Traceroute?
@@ -148,8 +146,11 @@ if [ "url" == "$1" ]; then
 		echo "";
 	fi
 
+	echo "HTTP Headers: ";
+	echo "";
+	curl -I $2 --silent;
+	echo "";
 	# TODO: 
-	# curl to see headers
 	# whois?
 	# what else?
 	
