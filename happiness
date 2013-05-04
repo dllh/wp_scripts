@@ -12,7 +12,7 @@ function usage {
 	echo ""
 	echo "	Valid commands:"
 	echo ""
-	echo "		import somefile.xml"
+	echo "		check_import somefile.xml"
 	echo ""
 	echo "		url http://someurl.com"
 	echo ""
@@ -234,13 +234,27 @@ if [ "url" == "$1" ]; then
 
 	add_http_if_needed $2 __URL
 
+	echo "";
 	echo "HTTP Headers: ";
 	echo "";
 	curl -I $__URL --silent;
 	echo "";
-	# TODO: 
-	# whois?
-	# what else?
+
+	echo "Now checking for more detailed info.";
+	echo "";
+	URL_CONTENT="/tmp/url_"`echo $__URL |md5`".html"
+	if [ -e "$URL_CONTENT" ]; then
+		rm $URL_CONTENT
+	fi
+
+	curl $__URL --silent > $URL_CONTENT
+	echo "WordPress Version: " `cat $URL_CONTENT | grep '<meta name="generator" content=' |sed 's/.*content=\"\(.*\)\".*/\1/'`
+	echo "       Site Title: " `cat $URL_CONTENT | grep '<title>' |sed 's/<title>\(.*\)<\/title>/\1/'`
+	echo "            Theme: " `cat $URL_CONTENT | grep '/style.css' |grep -m 1 'wp-content/themes' |sed 's/.*themes\/\(.*\)\/style\.css.*/\1/'`
+	echo ""
+
+
+	rm $URL_CONTENT
 	
 fi
 
