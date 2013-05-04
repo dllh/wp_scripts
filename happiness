@@ -49,6 +49,7 @@ if [ "import" == "$1" ]; then
 		echo "";
 		echo "Please make sure that the file you're specifying as an argument exists in the path specified.";
 		echo "";
+		exit;
 	fi
 
 	POSTS=`cat $2 |grep "post_type>post<" |wc -l`;
@@ -100,6 +101,7 @@ if [ "feed" == "$1" ]; then
 		echo "";
 		echo "Please make sure you've specified a feed url.";
 		echo "";
+		exit;
 	fi
 
 	error_on_404 $2;
@@ -142,8 +144,64 @@ if [ "whois" == "$1" ]; then
 		echo "";
 		echo "Please replace <domain.com> with an actual domain.";
 		echo "";
+		exit;
 	fi
-	whois $2;
+
+	HAS_WHOIS_PY_MOD=`pydoc -w whois`
+	# pydoc leaves this little file behind. Tidy up.
+	if [ -e whois.html ]; then
+		rm whois.html
+	fi
+
+	if [ -z "$HAS_WHOIS_PY_MOD" ]; then
+		echo "";
+		echo "I need to install a python library so that I can parse whois results for you.";
+		echo "";
+		echo "It should be pretty harmless.";
+		echo "";
+		echo "If you're ok with it, then provide your password when prompted below to give this script privileges to install the library. If you're not, just ctrl-c to quit.";
+		echo "";
+
+		sudo easy_install python-whois
+	fi
+
+	# Check for the whois library again.
+	HAS_WHOIS_PY_MOD=`pydoc -w whois`
+	# pydoc leaves this little file behind. Tidy up.
+	if [ -e whois.html ]; then
+		rm whois.html
+	fi
+	
+	if [ -z "$HAS_WHOIS_PY_MOD" ]; then
+		echo "";
+		echo "I tried to install the whois module for python, but it didn't work. I give up. Sorry. :(";
+		echo "";
+	fi
+
+	WHOIS_SCRIPT="/tmp/whois_"`echo $2 | md5`".py"
+	echo "#!/usr/bin/python" > $WHOIS_SCRIPT
+	echo "" >> $WHOIS_SCRIPT
+	echo "import whois" >> $WHOIS_SCRIPT
+	echo "" >> $WHOIS_SCRIPT
+	echo "domain = whois.query( '$2' )" >> $WHOIS_SCRIPT
+	echo "if domain is None:" >> $WHOIS_SCRIPT
+	echo "	print( 'Error querying domain.' )" >> $WHOIS_SCRIPT
+	echo "	exit()" >> $WHOIS_SCRIPT
+	echo "print( 'Registrar:     %s' % domain.registrar )" >> $WHOIS_SCRIPT
+	echo "print( 'Creation Date: %s' % domain.creation_date )" >> $WHOIS_SCRIPT
+	echo "print( 'Expiration:    %s' % domain.expiration_date )" >> $WHOIS_SCRIPT
+	echo "print( 'Last Updated:  %s' % domain.last_updated )" >> $WHOIS_SCRIPT
+	echo "print( 'Name Servers:' )" >> $WHOIS_SCRIPT
+	echo "for ns in domain.name_servers:" >> $WHOIS_SCRIPT
+	echo "	print( '        %s' % ns )" >> $WHOIS_SCRIPT
+	echo "" >> $WHOIS_SCRIPT
+
+	echo "";
+	echo "Running a whois query...";
+	echo "";
+	python $WHOIS_SCRIPT
+	echo "";
+	rm $WHOIS_SCRIPT
 fi
 
 if [ "url" == "$1" ]; then
@@ -153,6 +211,7 @@ if [ "url" == "$1" ]; then
 		echo "";
 		echo "Please replace <http://url.com/> with an actual url.";
 		echo "";
+		exit;
 	fi
 
 	echo "HTTP Headers: ";
