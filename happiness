@@ -69,10 +69,19 @@ if [ "import" == "$1" ]; then
 	echo "";
 	echo "==========================";
 	echo "";
+
+	TAIL=`tail -1 $2`;
+	if [ "</rss>" != "$TAIL" ]; then
+		echo "";
+		echo "ERROR: The last line is not </rss>, so this is probably an invalid or incomplete WXR file.";
+		echo "";
+		exit;
+	fi
+
 	echo "Now parsing XML for errors:"
 	echo "";
 	XML_ERRORS=`xmllint --noout $2`;
-	if [ -z "$XML_ERRORS" ]; then
+	if [[ 0 -eq $XML_ERRORS ]]; then
 		echo "";
 		echo "No errors! Any output displayed above should be considered notices but not errors. :)";
 		echo "";
