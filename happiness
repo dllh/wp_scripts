@@ -3,8 +3,6 @@
 # TODO: Who owns an IP?
 # TODO: Arin?
 # TODO: Interpret Traceroute?
-# TODO: For urls, add http:// where needed but not supplied and strip it where supplied but not needed.
-
 
 COMMANDS="info";
 
@@ -27,6 +25,23 @@ function usage {
 	echo "";
 }
 
+function get_domain_from_string {
+	local __RESULTVAR=$2
+	local RESULT=`echo $1 | sed 's/http:\/\///'`
+	RESULT=`echo $RESULT | sed 's/\/.*//'`
+	eval $__RESULTVAR="'$RESULT'"
+}
+
+function add_http_if_needed {
+	local __RESULTVAR=$2
+	local RESULT=`echo $1 |grep 'http://'`
+	if [ -z "$RESULT" ]; then
+		eval $__RESULTVAR="'http://$1'"
+	else
+		eval $__RESULTVAR="'$1'"
+	fi
+}
+
 function error_on_404 {
 	COUNT=`curl --silent -I $1 |grep -c "404 Not Found"`;
 	if [ 0 -ne $COUNT ]; then
@@ -40,7 +55,6 @@ function error_on_404 {
 if [ -z "$1" ]; then
 	usage;
 fi
-
 
 if [ "import" == "$1" ]; then
 	if [ -z "$2" ] || [ ! -e "$2" ]; then
@@ -104,9 +118,11 @@ if [ "feed" == "$1" ]; then
 		exit;
 	fi
 
-	error_on_404 $2;
+	add_http_if_needed $2 __FEED_URL
 
-	TMP_FILE="/tmp/feed-"`echo $2 | md5`;
+	error_on_404 $__FEED_URL;
+
+	TMP_FILE="/tmp/feed-"`echo $__FEED_URL | md5`;
 
 	if [ -e "$TMP_FILE" ]; then
 		rm $TMP_FILE;
@@ -116,7 +132,7 @@ if [ "feed" == "$1" ]; then
 	echo "Hang tight, I'm fetching the feed...";
 	echo ""
 
-	curl $2 --silent -o $TMP_FILE
+	curl $__FEED_URL --silent -o $TMP_FILE
 	if [ ! -e "$TMP_FILE" ]; then
 		echo "";
 		echo "Oops, it looks like we coudn't fetch that feed.";
@@ -178,12 +194,14 @@ if [ "whois" == "$1" ]; then
 		echo "";
 	fi
 
-	WHOIS_SCRIPT="/tmp/whois_"`echo $2 | md5`".py"
+	get_domain_from_string $2 __WHOIS_DOMAIN
+
+	WHOIS_SCRIPT="/tmp/whois_"`echo $__WHOIS_DOMAIN | md5`".py"
 	echo "#!/usr/bin/python" > $WHOIS_SCRIPT
 	echo "" >> $WHOIS_SCRIPT
 	echo "import whois" >> $WHOIS_SCRIPT
 	echo "" >> $WHOIS_SCRIPT
-	echo "domain = whois.query( '$2' )" >> $WHOIS_SCRIPT
+	echo "domain = whois.query( '$__WHOIS_DOMAIN' )" >> $WHOIS_SCRIPT
 	echo "if domain is None:" >> $WHOIS_SCRIPT
 	echo "	print( 'Error querying domain.' )" >> $WHOIS_SCRIPT
 	echo "	exit()" >> $WHOIS_SCRIPT
@@ -214,9 +232,11 @@ if [ "url" == "$1" ]; then
 		exit;
 	fi
 
+	add_http_if_needed $2 __URL
+
 	echo "HTTP Headers: ";
 	echo "";
-	curl -I $2 --silent;
+	curl -I $__URL --silent;
 	echo "";
 	# TODO: 
 	# whois?
