@@ -1,0 +1,160 @@
+#!/bin/bash
+
+# TODO: Feeds
+# TODO: Whois
+# TODO: Who owns an IP?
+# TODO: Arin?
+# TODO: Interpret Traceroute?
+# TODO: For urls, add http:// where needed but not supplied and strip it where supplied but not needed.
+
+
+COMMANDS="info";
+
+function usage {
+	echo "";
+	echo "Usage: ./happiness <command> [<args>]";
+	echo ""
+	echo "	Valid commands:"
+	echo ""
+	echo "		import somefile.xml"
+	echo ""
+	echo "		url http://someurl.com"
+	echo ""
+	echo "		whois someurl.com"
+	echo ""
+	echo "		feed http://feedurl.com"
+	echo ""
+	echo "		awesome"
+	echo ""
+	echo "";
+}
+
+function error_on_404 {
+	COUNT=`curl --silent -I $1 |grep -c "404 Not Found"`;
+	if [ 0 -ne $COUNT ]; then
+		echo ""	
+		echo "Oops, I got a 404 error for $1"
+		echo ""	
+		exit;
+	fi
+}
+
+if [ -z "$1" ]; then
+	usage;
+fi
+
+
+if [ "import" == "$1" ]; then
+	if [ -z "$2" ] || [ ! -e "$2" ]; then
+		echo "";
+		echo "Usage: ./happiness import <file.xml>";
+		echo "";
+		echo "Please make sure that the file you're specifying as an argument exists in the path specified.";
+		echo "";
+	fi
+
+	POSTS=`cat $2 |grep "post_type>post<" |wc -l`;
+	PAGES=`cat $2 |grep "post_type>page<" |wc -l`;
+	ATTACHMENTS=`cat $2 |grep "post_type>attachment<" |wc -l`;
+	COMMENTS=`cat $2 |grep "<wp:comment>" |wc -l`;
+	ALL=`cat $2 |grep "post_type>" |wc -l`;
+
+	# TODO: xmllint?
+
+	echo "==========================";
+	echo "";
+	echo "Posts:       $POSTS";
+	echo "Pages:       $PAGES";
+	echo "Attachments: $ATTACHMENTS";
+	echo "Total:       $ALL";
+	echo "Comments:    $COMMENTS";
+	echo "";
+	echo "==========================";
+	echo "";
+	echo "Now parsing XML for errors:"
+	echo "";
+	XML_ERRORS=`xmllint --noout $2`;
+	if [ -z "$XML_ERRORS" ]; then
+		echo "";
+		echo "No errors! Any output displayed above should be considered notices but not errors. :)";
+		echo "";
+	else
+		echo "XML PARSING ERRORS:";
+		echo "";
+		echo $XML_ERRORS;
+	fi
+	
+fi
+
+if [ "feed" == "$1" ]; then
+	if [ -z "$2" ]; then
+		echo "";
+		echo "Usage: ./happiness feed <http://feedurl.com/>";
+		echo "";
+		echo "Please make sure you've specified a feed url.";
+		echo "";
+	fi
+
+	error_on_404 $2;
+
+	TMP_FILE="/tmp/feed-"`echo $2 | md5`;
+
+	if [ -e "$TMP_FILE" ]; then
+		rm $TMP_FILE;
+	fi
+
+	echo "";
+	echo "Hang tight, I'm fetching the feed...";
+	echo ""
+
+	curl $2 --silent -o $TMP_FILE
+	if [ ! -e "$TMP_FILE" ]; then
+		echo "";
+		echo "Oops, it looks like we coudn't fetch that feed.";
+		echo "";
+	fi
+
+	XML_ERRORS=`xmllint --noout $TMP_FILE`
+	if [ -z "$XML_ERRORS" ]; then
+		echo "Yay, no errors.";
+	else
+		echo "Oops, we found errors:";
+		echo "";
+		echo $XML_ERRORS;
+	fi
+
+	echo ""
+
+	rm $TMP_FILE;
+fi
+
+if [ "whois" == "$1" ]; then
+	if [ -z "$2" ]; then
+		echo "";
+		echo "Usage: ./happiness whois <domain.com>";
+		echo "";
+		echo "Please replace <domain.com> with an actual domain.";
+		echo "";
+	fi
+	whois $2;
+fi
+
+if [ "url" == "$1" ]; then
+	if [ -z "$2" ]; then
+		echo "";
+		echo "Usage: ./happiness url <http://url.com/>";
+		echo "";
+		echo "Please replace <http://url.com/> with an actual url.";
+		echo "";
+	fi
+
+	# TODO: 
+	# curl to see headers
+	# whois?
+	# what else?
+	
+fi
+
+if [ "awesome" == "$1" ]; then
+	say "daryl is awesome";
+fi
