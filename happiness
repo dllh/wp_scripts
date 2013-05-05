@@ -27,6 +27,18 @@ function usage {
 	echo "";
 }
 
+function anon_usage_stats {
+	URL="http://oddbird.org/happiness/index.php?place=holder"
+	if [ ! -z $1 ]; then
+		URL="$URL&command=$1"
+	fi
+
+	if [ ! -z $2 ]; then
+		URL="$URL&error=$2"
+	fi
+	curl --max-time 2 --silent $URL
+}
+
 function get_domain_from_string {
 	local __RESULTVAR=$2
 	local RESULT=`echo $1 | sed 's/http:\/\///'`
@@ -100,12 +112,11 @@ function install_python_package {
 	fi
 }
 
-
-if [ -z "$1" ]; then
-	usage;
-fi
+VALID_COMMAND_SPECIFIED=0
 
 if [ "check_import" == "$1" ]; then
+	VALID_COMMAND_SPECIFIED=1
+
 	if [ -z "$2" ] || [ ! -e "$2" ]; then
 		echo "";
 		echo "Usage: ./happiness check_import <file.xml>";
@@ -134,6 +145,7 @@ if [ "check_import" == "$1" ]; then
 
 	TAIL=`tail -1 $2`;
 	if [ "</rss>" != "$TAIL" ]; then
+		anon_usage_stats check_import missing_terminal_rss
 		echo "";
 		echo "ERROR: The last line is not </rss>, so this is probably an invalid or incomplete WXR file.";
 		echo "";
@@ -155,10 +167,14 @@ if [ "check_import" == "$1" ]; then
 		cat /tmp/xmllint_output
 	fi
 	rm /tmp/xmllint_output
+
+	anon_usage_stats check_import
 	
 fi
 
 if [ "feed" == "$1" ]; then
+	VALID_COMMAND_SPECIFIED=1
+
 	if [ -z "$2" ]; then
 		echo "";
 		echo "Usage: ./happiness feed <http://feedurl.com/>";
@@ -193,6 +209,7 @@ if [ "feed" == "$1" ]; then
 	FEED_XML=`cat $TMP_FILE`
 
 	if [[ `echo $FEED_XML |grep -c "<feed xmlns"` == 0 ]] && [[ `echo $FEED_XML |grep -c "<rss version"` == 0 ]]; then
+		anon_usage_stats feed not_atom_rss
 		echo "";
 		echo "That url doesn't look like a valid Atom or RSS feed."
 		echo "";
@@ -216,9 +233,14 @@ if [ "feed" == "$1" ]; then
 	echo ""
 
 	rm $TMP_FILE;
+
+	anon_usage_stats feed
+
 fi
 
 if [ "whois" == "$1" ]; then
+	VALID_COMMAND_SPECIFIED=1
+
 	if [ -z "$2" ]; then
 		echo "";
 		echo "Usage: ./happiness whois <domain.com>";
@@ -227,6 +249,8 @@ if [ "whois" == "$1" ]; then
 		echo "";
 		exit;
 	fi
+
+	anon_usage_stats whois
 
 	install_python_package whois whois
 
@@ -265,6 +289,10 @@ if [ "whois" == "$1" ]; then
 fi
 
 if [ "url" == "$1" ]; then
+	VALID_COMMAND_SPECIFIED=1
+
+	anon_usage_stats url
+
 	if [ -z "$2" ]; then
 		echo "";
 		echo "Usage: ./happiness url <http://url.com/>";
@@ -303,6 +331,10 @@ if [ "url" == "$1" ]; then
 fi
 
 if [ "dig" == "$1" ]; then
+	VALID_COMMAND_SPECIFIED=1
+
+	anon_usage_stats url
+
 	if [ -z "$2" ]; then
 		echo "Usage: ./happiness dig <somedomain.com>";
 		echo "";
@@ -352,6 +384,9 @@ if [ "dig" == "$1" ]; then
 fi
 
 if [ "awesome" == "$1" ]; then
+	VALID_COMMAND_SPECIFIED=1
+
+	anon_usage_stats awesome
 
 	echo ""
 	AWESOME="CiAgICAgICAgICAgICAgICAgX19fX19fCiAgICAgICAgICAgICAgLC0nICBfXyAsYC0tLgogICAgICAgICAgICAsJyAgLC0nTykgXCcgXyBcCiAgICAgICAgICAgLyAgXyAgICAgXyw6LCctYCcKICAgICAgICAgIDogICwgLyAgLCcgICA6CiAgICAgICAgICA7IDogXCAoICAgICkgfAogICAgICAgICAvLiBcXyBgLWAgIC8sIGAuCiAgICAgICAgLztgLS5fXCAgICAnLyBcICBgLgogICAgICAgLy8gYC0gLGAnICAsJyAtJywnYC1gLgogICAgICAvYDovICAnLScgIC5fLCAgLyBgLSdgLVwKICAgICA7YC18YC8gICAvICAgLCAgOmAtJ2AtJ2AtXAogICAgIHxgLTogYC0nIGAtJyBgLSB8LSdgLSdgLSc6CiAgICAgOmAtOiB8ICB8XyB8ICB8IDpgLSdgLSdgLXwKICAgICA6YC0gOmAtJyAgIGAtJyBgXCdgLSdgLSdgOwogICAgIFxgLSdcIFxfLCBcXywgfF86LSdgLSdgLSc6CiAgICAgIFwtJydcICAgICctICAgICBcYC0nYC0nYC8KICAgICAgIGAuLSdcIFwgIGAtJyAgYC06YC0nYC0nXAogICAgICAgICBcLSdcIGAtJyAgXF8sIHwnYC0nYC0nOgogICAgICAgICAgOi0nXCBcXyAgICAgIDogJyAnICcgOgogICAgICAgICAgYC4tJ1wgIGAtJyBcICBcICcgJyAnOwogICAgICAgICAgICBcLSc6YC0nICA6ICA6ICcgJyAnXAogICAgICAgICAgICAgYC58ICBgLSc6LiAoLyA7JywnOwogICAgICAgICAgICAgICA7YC0nICBcLycuXCggKCAoOgogICAgICAgICAgICAgICAgKSwuXy8vIC8uIDonJ2AuOgogICAgICAgICAgICAgICBfLyAvXy8gICknYHwnJ2AuKAogICAgICAgICAgXy4uLWBfLC1gXy4gKCAnIDonJ2AuOwogICAgICAgICAoLDsvO18sLScnICBcLDonIHxcJ2AuOmAuCiAgICAgICAgLyAoLCgvICAgICAgICBgL1wgfHxcYC58ICBcCiAgICAgICA7LScnICcgICAsLScgICAuICBgOnx8Oi4oLS4gXAogICAgLC0nIC4gICAgLyAgICAgICAgIGAgICBcfCBgJyAgYCcKICAgJyAgICAnOi5fICAgICAgICApICAgICAsJygnCiAgICAgICAgICAgICAgICAgICwnICAgICAgICBcIFNTdAo="
@@ -359,4 +394,8 @@ if [ "awesome" == "$1" ]; then
 	echo ""
 	echo ""
 	say `echo "ZGFyeWwgaXMgYXdlc29tZQo=" |base64 --decode`
+fi
+
+if [[ 0 == $VALID_COMMAND_SPECIFIED ]]; then
+	usage
 fi
