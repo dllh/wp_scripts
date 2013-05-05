@@ -181,7 +181,7 @@ if [ "whois" == "$1" ]; then
 		echo "";
 		echo "It should be pretty harmless.";
 		echo "";
-		echo "If you're ok with it, then provide your password when prompted below to give this script privileges to install the library. If you're not, just ctrl-c to quit.";
+		echo "If you're ok with it, then provide your Mac user password when prompted below to give this script privileges to install the library. If you're not, just ctrl-c to quit.";
 		echo "";
 
 		sudo easy_install python-whois
@@ -223,7 +223,13 @@ if [ "whois" == "$1" ]; then
 	echo "";
 	echo "Running a whois query...";
 	echo "";
-	python $WHOIS_SCRIPT
+	WHOIS_OUT=`python $WHOIS_SCRIPT`
+	WHOIS_ERROR=`echo $WHOIS_OUT |grep 'Error querying domain'`
+	if [ -z "$WHOIS_ERROR" ]; then
+		echo "$WHOIS_OUT"
+	else
+		whois $__WHOIS_DOMAIN
+	fi
 	echo "";
 	rm $WHOIS_SCRIPT
 fi
