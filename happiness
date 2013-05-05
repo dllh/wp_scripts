@@ -56,10 +56,10 @@ if [ -z "$1" ]; then
 	usage;
 fi
 
-if [ "import" == "$1" ]; then
+if [ "check_import" == "$1" ]; then
 	if [ -z "$2" ] || [ ! -e "$2" ]; then
 		echo "";
-		echo "Usage: ./happiness import <file.xml>";
+		echo "Usage: ./happiness check_import <file.xml>";
 		echo "";
 		echo "Please make sure that the file you're specifying as an argument exists in the path specified.";
 		echo "";
@@ -71,8 +71,6 @@ if [ "import" == "$1" ]; then
 	ATTACHMENTS=`cat $2 |grep "post_type>attachment<" |wc -l`;
 	COMMENTS=`cat $2 |grep "<wp:comment>" |wc -l`;
 	ALL=`cat $2 |grep "post_type>" |wc -l`;
-
-	# TODO: xmllint?
 
 	echo "==========================";
 	echo "";
@@ -95,16 +93,19 @@ if [ "import" == "$1" ]; then
 
 	echo "Now parsing XML for errors:"
 	echo "";
-	XML_ERRORS=`xmllint --noout $2`;
-	if [[ 0 -eq $XML_ERRORS ]]; then
+	XML_ERRORS=`xmllint --noout $2 &>/tmp/xmllint_output`;
+	HAS_XML_ERRORS=`cat /tmp/xmllint_output |wc -l`
+
+	if [[ 0 -eq $HAS_XML_ERRORS ]]; then
 		echo "";
-		echo "No errors! Any output displayed above should be considered notices but not errors. :)";
+		echo "No errors!";
 		echo "";
 	else
 		echo "XML PARSING ERRORS:";
 		echo "";
-		echo $XML_ERRORS;
+		cat /tmp/xmllint_output
 	fi
+	rm /tmp/xmllint_output
 	
 fi
 
