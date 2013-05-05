@@ -187,6 +187,16 @@ if [ "feed" == "$1" ]; then
 		echo "";
 		echo "Oops, it looks like we coudn't fetch that feed.";
 		echo "";
+		exit;
+	fi
+
+	FEED_XML=`cat $TMP_FILE`
+
+	if [[ `echo $FEED_XML |grep -c "<feed xmlns"` == 0 ]] && [[ `echo $FEED_XML |grep -c "<rss version"` == 0 ]]; then
+		echo "";
+		echo "That url doesn't look like a valid Atom or RSS feed."
+		echo "";
+		exit;
 	fi
 
 	XML_ERRORS=`xmllint --noout $TMP_FILE &>/tmp/xmllint_output`;
