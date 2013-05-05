@@ -4,8 +4,6 @@
 # TODO: Arin?
 # TODO: Interpret Traceroute?
 
-COMMANDS="info";
-
 function usage {
 	echo "";
 	echo "Usage: ./happiness <command> [<args>]";
