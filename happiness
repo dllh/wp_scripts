@@ -259,5 +259,5 @@ if [ "url" == "$1" ]; then
 fi
 
 if [ "awesome" == "$1" ]; then
-	say "daryl is awesome";
+	say `echo "ZGFyeWwgaXMgYXdlc29tZQo=" |base64 --decode`
 fi
