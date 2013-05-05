@@ -235,6 +235,8 @@ if [ "url" == "$1" ]; then
 
 	add_http_if_needed $2 __URL
 
+	error_on_404 $__URL
+
 	echo "";
 	echo "HTTP Headers: ";
 	echo "";
