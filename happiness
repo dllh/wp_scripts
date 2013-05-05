@@ -20,6 +20,8 @@ function usage {
 	echo ""
 	echo "		feed http://feedurl.com"
 	echo ""
+	echo "		dig someurl.com"
+	echo ""
 	echo "		awesome"
 	echo ""
 	echo "";
@@ -28,7 +30,7 @@ function usage {
 function get_domain_from_string {
 	local __RESULTVAR=$2
 	local RESULT=`echo $1 | sed 's/http:\/\///'`
-	RESULT=`echo $RESULT | sed 's/\/.*//'`
+	RESULT=`echo $RESULT | sed 's/\/.*//' | awk -F. '{ print $(NF-1) "." $NF }'`
 	eval $__RESULTVAR="'$RESULT'"
 }
 
@@ -51,6 +53,53 @@ function error_on_404 {
 		exit;
 	fi
 }
+
+function install_python_package {
+
+	PKG="$1"
+	MODULE_TO_IMPORT="$2"
+
+	PKG_TEST_FILE="/tmp/py_module_test_$PKG.py"
+	echo "#!/usr/bin/python" > $PKG_TEST_FILE
+	echo "import sys" >> $PKG_TEST_FILE
+	echo "try:" >> $PKG_TEST_FILE
+	echo "	import $MODULE_TO_IMPORT" >> $PKG_TEST_FILE
+	echo "	print 'success'" >> $PKG_TEST_FILE
+	echo "except ImportError:" >> $PKG_TEST_FILE
+	echo "	print 'error'" >> $PKG_TEST_FILE
+	echo "	sys.exit( 1 )" >> $PKG_TEST_FILE
+
+	RESULT=`python $PKG_TEST_FILE |grep -c success`
+	if [[ 0 -lt $RESULT ]]; then
+		return;
+	fi
+
+	echo "";
+	echo "I need to install a python library.";
+	echo "";
+	echo "It should be pretty harmless but it may look scary because it'll display stuff to your screen.";
+	echo "";
+	echo "If you're ok with it, then provide your Mac user password when prompted below to give this script privileges to install the library. If you're not, just ctrl-c to quit.";
+	echo "";
+	echo "This should be a one-time notice for this particular command. Breathe easy, friend.";
+	echo "";
+
+	sudo easy_install $PKG
+
+	# Check for the package again.
+	RESULT=`python $PKG_TEST_FILE`
+	if [ "success" == "$RESULT" ]; then
+		echo "";
+		echo "I already have the necessary python package. Yay!"
+		echo "";
+	else
+		echo "";
+		echo "I tried to install the $PKG package for python, but it didn't work. I give up. Sorry. :(";
+		echo "";
+		exit;
+	fi
+}
+
 
 if [ -z "$1" ]; then
 	usage;
@@ -169,36 +218,7 @@ if [ "whois" == "$1" ]; then
 		exit;
 	fi
 
-	HAS_WHOIS_PY_MOD=`pydoc -w whois`
-	# pydoc leaves this little file behind. Tidy up.
-	if [ -e whois.html ]; then
-		rm whois.html
-	fi
-
-	if [ -z "$HAS_WHOIS_PY_MOD" ]; then
-		echo "";
-		echo "I need to install a python library so that I can parse whois results for you.";
-		echo "";
-		echo "It should be pretty harmless.";
-		echo "";
-		echo "If you're ok with it, then provide your Mac user password when prompted below to give this script privileges to install the library. If you're not, just ctrl-c to quit.";
-		echo "";
-
-		sudo easy_install python-whois
-	fi
-
-	# Check for the whois library again.
-	HAS_WHOIS_PY_MOD=`pydoc -w whois`
-	# pydoc leaves this little file behind. Tidy up.
-	if [ -e whois.html ]; then
-		rm whois.html
-	fi
-	
-	if [ -z "$HAS_WHOIS_PY_MOD" ]; then
-		echo "";
-		echo "I tried to install the whois module for python, but it didn't work. I give up. Sorry. :(";
-		echo "";
-	fi
+	install_python_package whois whois
 
 	get_domain_from_string $2 __WHOIS_DOMAIN
 
@@ -231,7 +251,7 @@ if [ "whois" == "$1" ]; then
 		whois $__WHOIS_DOMAIN
 	fi
 	echo "";
-	rm $WHOIS_SCRIPT
+	#rm $WHOIS_SCRIPT
 fi
 
 if [ "url" == "$1" ]; then
@@ -270,6 +290,55 @@ if [ "url" == "$1" ]; then
 
 	rm $URL_CONTENT
 	
+fi
+
+if [ "dig" == "$1" ]; then
+	if [ -z "$2" ]; then
+		echo "Usage: ./happiness dig <somedomain.com>";
+		echo "";
+		echo "Please replace <somedomain.com> with an actual domain.";
+		echo "";
+		exit;
+	fi
+
+	install_python_package dnspython "dns.resolver"
+
+	get_domain_from_string $2 __DIG_DOMAIN
+
+	DIG_SCRIPT="/tmp/dig_"`echo $__DIG_DOMAIN | md5`".py"
+	echo "#!/usr/bin/python" > $DIG_SCRIPT
+	echo "" >> $DIG_SCRIPT
+	echo "import dns.resolver" >> $DIG_SCRIPT
+	echo "" >> $DIG_SCRIPT
+	echo "print( 'Mail (MX) Records:' )" >> $DIG_SCRIPT
+	echo "answers = dns.resolver.query( '$__DIG_DOMAIN', 'MX' )" >> $DIG_SCRIPT
+	echo "for record in answers:" >> $DIG_SCRIPT
+	echo "	print '\t', record.preference, '\t', record.exchange" >> $DIG_SCRIPT
+	echo "" >> $DIG_SCRIPT
+	echo "print( 'Name Server Records:' )" >> $DIG_SCRIPT
+	echo "answers = dns.resolver.query( '$__DIG_DOMAIN', 'NS' )" >> $DIG_SCRIPT
+	echo "for record in answers:" >> $DIG_SCRIPT
+	echo "	print '\t', record" >> $DIG_SCRIPT
+	echo "" >> $DIG_SCRIPT
+	echo "print( 'A Records:' )" >> $DIG_SCRIPT
+	echo "answers = dns.resolver.query( '$__DIG_DOMAIN', 'A' )" >> $DIG_SCRIPT
+	echo "for record in answers:" >> $DIG_SCRIPT
+	echo "	print '\t', record" >> $DIG_SCRIPT
+	echo "" >> $DIG_SCRIPT
+	echo "" >> $DIG_SCRIPT
+
+	echo "";
+	echo "Running dig queries on $__DIG_DOMAIN...";
+	echo "";
+	DIG_OUT=`python $DIG_SCRIPT`
+	DIG_ERROR=`echo $DIG_OUT |grep 'Error querying domain'`
+	if [ -z "$DIG_ERROR" ]; then
+		echo "$DIG_OUT"
+	else
+		echo "Oops, there was some kind of error."
+	fi
+	echo ""
+
 fi
 
 if [ "awesome" == "$1" ]; then
