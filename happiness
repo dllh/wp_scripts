@@ -27,7 +27,28 @@ function usage {
 	echo "";
 }
 
+function prompt_for_usage_stats {
+	if [ ! -e ~/.happiness_anon_usage_stats ]; then
+		echo "";
+		echo "May I send anonymous stats about what commands you're running to a remote server? It's ok if you say no but will give me warm fuzzies to see that the tool is being used."
+		echo ""
+		echo "You can change your answer at any time by editing or removing the file named .happiness_anon_usage_stats in your home directory (rm ~/.happiness_anon_usage_stats)"
+		echo ""
+		echo "Your answer [y or n]: "
+
+		read ANSWER
+
+		echo $ANSWER > ~/.happiness_anon_usage_stats
+
+	fi
+}
+
 function anon_usage_stats {
+	CAN_SEND=`cat ~/.happiness_anon_usage_stats`
+	if [ "y" != "$CAN_SEND" ]; then
+		return;
+	fi
+
 	URL="http://oddbird.org/happiness/index.php?place=holder"
 	if [ ! -z $1 ]; then
 		URL="$URL&command=$1"
@@ -111,6 +132,8 @@ function install_python_package {
 		exit;
 	fi
 }
+
+prompt_for_usage_stats
 
 VALID_COMMAND_SPECIFIED=0
 
