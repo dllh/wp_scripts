@@ -140,14 +140,19 @@ if [ "feed" == "$1" ]; then
 		echo "";
 	fi
 
-	XML_ERRORS=`xmllint --noout $TMP_FILE`
-	if [ -z "$XML_ERRORS" ]; then
-		echo "Yay, no errors.";
-	else
-		echo "Oops, we found errors:";
+	XML_ERRORS=`xmllint --noout $TMP_FILE &>/tmp/xmllint_output`;
+	HAS_XML_ERRORS=`cat /tmp/xmllint_output |wc -l`
+
+	if [[ 0 -eq $HAS_XML_ERRORS ]]; then
 		echo "";
-		echo $XML_ERRORS;
+		echo "No errors!";
+		echo "";
+	else
+		echo "FEED PARSING ERRORS:";
+		echo "";
+		cat /tmp/xmllint_output
 	fi
+	rm /tmp/xmllint_output
 
 	echo ""
 
