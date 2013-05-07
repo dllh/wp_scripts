@@ -299,6 +299,14 @@ if [ "url" == "$1" ]; then
 	echo "WordPress Version: " `cat $URL_CONTENT | grep '<meta name="generator" content=' |sed 's/.*content=\"\(.*\)\".*/\1/'`
 	echo "       Site Title: " `cat $URL_CONTENT | grep '<title>' |sed 's/<title>\(.*\)<\/title>/\1/'`
 	echo "            Theme: " `cat $URL_CONTENT | grep '/style.css' |grep -m 1 'wp-content/themes' |sed 's/.*themes\/\(.*\)\/style\.css.*/\1/'`
+	if [[ 0 != `cat $URL_CONTENT |grep -c "W3 Total Cache"` ]]; then
+		echo "   W3 Total Cache:  installed"
+	fi
+	if [[ 0 != `cat $URL_CONTENT |grep -c "st_go"` ]]; then
+		echo "      Has Jetpack:  yes"
+	else
+		echo "      Has Jetpack:  no"
+	fi
 	echo ""
 
 
