@@ -302,7 +302,7 @@ if [ "url" == "$1" ]; then
 	if [[ 0 != `cat $URL_CONTENT |grep -c "W3 Total Cache"` ]]; then
 		echo "   W3 Total Cache:  installed"
 	fi
-	if [[ 0 != `cat $URL_CONTENT |grep -c "st_go"` ]]; then
+	if [[ 0 != `cat $URL_CONTENT |grep -c "v:'ext'"` ]]; then
 		echo "      Has Jetpack:  yes"
 	else
 		echo "      Has Jetpack:  no"
