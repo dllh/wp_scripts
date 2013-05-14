@@ -304,6 +304,8 @@ if [ "url" == "$1" ]; then
 	fi
 	if [[ 0 != `cat $URL_CONTENT |grep -c "v:'ext'"` ]]; then
 		echo "      Has Jetpack:  yes"
+		echo "  Jetpack version: " `cat $URL_CONTENT | grep 'st_go' |sed "s/.*j:\'1:\(.*\)\\',blog.*/\1/"`
+		echo "          Blog ID: " `cat $URL_CONTENT | grep 'st_go' |sed "s/.*blog:\'\(.*\)\\',post.*/\1/"`
 	else
 		echo "      Has Jetpack:  no"
 	fi
