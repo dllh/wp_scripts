@@ -10,7 +10,11 @@ class WXR_Generator {
 		$this->comments_per_post = 0;
 		$this->tag_count = 250;
 		$this->cat_count = 250;
+		// For setting minimum tag and category ids (not essential most of the time).
+		$this->tag_min_id = 0;
+		$this->cat_min_id = 0;
 		$this->author_count = 1;
+		$this->term_prefixes = array();
 
 		$this->authors = $this->categories = $this->tags = array();
 	}
@@ -26,7 +30,7 @@ class WXR_Generator {
 	}
 
 	function generate_categories() {
-		for ( $i = $this->cat_count; $i > 0; $i-- ) {
+		for ( $i = $this->cat_min_id; $i < ( $this->cat_min_id + $this->cat_count ); $i++ ) {
 				$this->categories[] = $i;
 			?>
 				<wp:category><wp:term_id><?php echo $i; ?></wp:term_id><wp:category_nicename><?php echo $this->get_term_slug( 'category', $i ); ?></wp:category_nicename><wp:category_parent></wp:category_parent><wp:cat_name><![CDATA[<?php echo $this->get_term_name( 'category', $i ); ?>]]></wp:cat_name></wp:category>
@@ -34,23 +38,40 @@ class WXR_Generator {
 		}
 	}
 
-	// Helper function because we want to be consistent in this in both the category listing near the top of the wxr and in the per-post categories.
-	function get_term_name( $taxonomy, $id ) {
-		return ucfirst( $taxonomy ) . ' ' . $id;
-	}
-
-	// Helper function because we want to be consistent in this in both the category listing near the top of the wxr and in the per-post categories.
-	function get_term_slug( $taxonomy, $id ) {
-		return $taxonomy . '-' . $id;
-	}
-
 	function generate_tags() {
-		for ( $i = $this->tag_count; $i > 0; $i-- ) {
-				$this->tags[] = 'tag-' . $i;
+		for ( $i = $this->tag_min_id; $i < ( $this->tag_min_id + $this->tag_count ); $i++ ) {
+				$this->tags[] = $i;
 			?>
 				<wp:term><wp:term_id><?php echo $i; ?></wp:term_id><wp:term_taxonomy>post_tag</wp:term_taxonomy><wp:term_slug><?php echo $this->get_term_slug( 'tag', $i ); ?></wp:term_slug><wp:term_name><![CDATA[<?php echo $this->get_term_name( 'tag', $i ); ?>]]></wp:term_name></wp:term>
 			<?php
 		}
+	}
+
+	// Generate a randomish string for inclusion in tag and category slugs and names.
+	function get_random_term_prefix( $taxonomy, $id ) {
+		if ( ! array_key_exists( $taxonomy . '-' . $id, $this->term_prefixes ) ) {
+			$randomish_string = $taxonomy . $id . mt_rand();
+			$randomish_string = md5( $randomish_string );
+			$randomish_string = str_shuffle( $randomish_string );
+			$randomish_string = substr( $randomish_string, 0, 10 );
+
+			$this->term_prefixes[ $taxonomy . '-' . $id ] = $randomish_string;
+		}
+
+		return $this->term_prefixes[ $taxonomy . '-' . $id ];
+
+	}
+
+	// Helper function because we want to be consistent in this in both the category listing near the top of the wxr and in the per-post categories.
+	function get_term_name( $taxonomy, $id ) {
+		$prefix = $this->get_random_term_prefix( $taxonomy, $id );
+		return ucfirst( $taxonomy ) . ' ' . $prefix . ' ' . $id;
+	}
+
+	// Helper function because we want to be consistent in this in both the category listing near the top of the wxr and in the per-post categories.
+	function get_term_slug( $taxonomy, $id ) {
+		$prefix = $this->get_random_term_prefix( $taxonomy, $id );
+		return $taxonomy . '-' . $prefix . '-' . $id;
 	}
 
 	function generate_posts() {
