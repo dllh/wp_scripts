@@ -6,10 +6,10 @@ $w->dump();
 class WXR_Generator {
 
 	function __construct() {
-		$this->post_count = 500;
+		$this->post_count = 10;
 		$this->comments_per_post = 5;
-		$this->tag_count = 50;
-		$this->cat_count = 50;
+		$this->tag_count = 5;
+		$this->cat_count = 5;
 		// For setting minimum tag and category ids (not essential most of the time).
 		$this->tag_min_id = 1;
 		$this->cat_min_id = 1;
@@ -91,7 +91,7 @@ class WXR_Generator {
 				<dc:creator><?php echo $this->authors[ array_rand( $this->authors ) ]; ?></dc:creator>
 				<guid isPermaLink="false">http://oddbird.org/wptrunk/?p=<?php echo $i; ?></guid>
 				<description></description>
-				<content:encoded><![CDATA[Some content for post <?php echo $i; ?>]]></content:encoded>
+				<content:encoded><![CDATA[<?php echo $this->get_random_text(); ?>]]></content:encoded>
 				<excerpt:encoded><![CDATA[]]></excerpt:encoded>
 				<wp:post_id><?php echo $i; ?></wp:post_id>
 				<wp:post_date><?php echo @date( 'Y-m-d H:i:s', $timestamp ); ?></wp:post_date>
@@ -139,7 +139,7 @@ class WXR_Generator {
 							<wp:comment_author_IP></wp:comment_author_IP>
 							<wp:comment_date><?php echo @date( 'Y-m-d H:i:s', $comment_timestamp ); ?></wp:comment_date>
 							<wp:comment_date_gmt><?php echo gmdate( 'Y-m-d H:i:s', $comment_timestamp ); ?></wp:comment_date_gmt>
-							<wp:comment_content><![CDATA[ ]]></wp:comment_content>
+							<wp:comment_content><![CDATA[<?php echo $this->get_random_text(); ?>]]></wp:comment_content>
 							<wp:comment_approved>1</wp:comment_approved>
 							<wp:comment_type></wp:comment_type>
 							<wp:comment_parent>0</wp:comment_parent>
@@ -151,6 +151,23 @@ class WXR_Generator {
 			<?php
 
 		}
+	}
+
+	function get_random_text() {
+		$words = 'lorem ipsum dolor sit amet consectetur adipisicing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt in culpa qui officia deserunt mollit anim id est laborum';
+		$words = explode( ' ', $words );
+
+		$out = array();
+
+		$sentence_count = rand( 1, 7 );
+
+		for ( $i = 1; $i <= $sentence_count; $i++ ) {
+			shuffle( $words );
+			$words_in_sentence = array_slice( $words, 0, rand( 5, count( $words ) ) );
+			$out[] = ucfirst( array_pop( $words_in_sentence ) ) . ' ' . implode( ' ', $words_in_sentence ) . '.';
+		}
+		return implode( "\n\n", $out );
+
 	}
 
 	function dump() {
