@@ -6,13 +6,13 @@ $w->dump();
 class WXR_Generator {
 
 	function __construct() {
-		$this->post_count = 100;
-		$this->comments_per_post = 0;
-		$this->tag_count = 250;
-		$this->cat_count = 250;
+		$this->post_count = 500;
+		$this->comments_per_post = 5;
+		$this->tag_count = 50;
+		$this->cat_count = 50;
 		// For setting minimum tag and category ids (not essential most of the time).
-		$this->tag_min_id = 0;
-		$this->cat_min_id = 0;
+		$this->tag_min_id = 1;
+		$this->cat_min_id = 1;
 		$this->author_count = 1;
 		$this->term_prefixes = array();
 
