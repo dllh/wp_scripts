@@ -6,10 +6,10 @@ $w->dump();
 class WXR_Generator {
 
 	function __construct() {
-		$this->post_count = 10;
-		$this->comments_per_post = 5;
-		$this->tag_count = 5;
-		$this->cat_count = 5;
+		$this->post_count = 1000;
+		$this->comments_per_post = 2;
+		$this->tag_count = 3;
+		$this->cat_count = 3;
 		// For setting minimum tag and category ids (not essential most of the time).
 		$this->tag_min_id = 1;
 		$this->cat_min_id = 1;
@@ -107,7 +107,7 @@ class WXR_Generator {
 				<wp:is_sticky>0</wp:is_sticky>
 
 				<?php
-					$category_keys = array_rand( $this->categories, 5 );
+					$category_keys = array_rand( $this->categories, min( count( $this->categories ), 5 ) );
 					foreach ( $category_keys as $category_key => $category_id ) {
 				?>
 						<category domain="category" nicename="<?php echo $this->get_term_slug( 'category', $category_id ); ?>"><![CDATA[<?php echo $this->get_term_name( 'category', $category_id ); ?>]]></category>
@@ -117,7 +117,7 @@ class WXR_Generator {
 				?>
 
 				<?php
-					$tag_keys = array_rand( $this->tags, 5 );
+					$tag_keys = array_rand( $this->tags, min( count( $this->tags ), 5 ) );
 					foreach ( $tag_keys as $tag_key => $tag_id ) {
 				?>
 						<category domain="post_tag" nicename="<?php echo $this->get_term_slug( 'tag', $tag_id ); ?>"><![CDATA[<?php echo $this->get_term_name( 'tag', $tag_id ); ?>]]></category>
