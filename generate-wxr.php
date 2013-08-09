@@ -78,7 +78,7 @@ class WXR_Generator {
 
 		$running_comment_count = 0;
 
-		for ( $i = $this->post_count; $i > 0; $i-- ) {
+		for ( $i = 1; $i <= $this->post_count; $i++ ) {
 			$now = time();
 			$timestamp = rand( $now - ( 60 * 86400 ), $now );
 			$slug_date = @date( 'Y/m', $timestamp );
