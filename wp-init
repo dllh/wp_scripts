@@ -1,0 +1,71 @@
+#!/bin/bash
+
+################################################################################
+#
+# A script to ease the process of setting up users and WordPress installs
+# in a test hosting environment. It does the following:
+#
+#    * Creates a user on the linux system with .ssh directory with the right privs
+#    * Creates /var/www/html/$USERNAME and a symlink to /home/$USERNAME/wordpress
+#    * Dumps WP 4.6 into the directory with passwords, etc., specified in the vars
+#      below. 
+#    * Creates the needed mysql database and privs.
+#    * Adds custom salts to wp-config.php and runs the install script.
+#
+# The script doesn't do much validation and could be destructive. It's useful
+# for bootstrapping a bunch of quick throwaway WP installs in a testing environment,
+# but I wouldn't get anywhere near a production environment with this.
+#
+################################################################################
+
+if [ -z $1 ]
+then
+	echo "Please pass a username."
+	exit
+fi
+
+if [ -e /var/www/html/$1 ]
+then
+	echo "Oops, we already have a WP install for that user."
+	exit
+fi
+
+USERNAME=$1
+DBP=" ---------- REPLACE ME ----------"
+WPP=" ---------- REPLACE ME ----------"
+EMAIL=" ---------- REPLACE ME ----------"
+DOMAIN=" ---------- REPLACE ME ----------"
+SITE_TITLE=" ---------- REPLACE ME ----------"
+
+echo "Initializing account for $USERNAME..."
+useradd --home /home/$USERNAME --create-home --shell /bin/bash $USERNAME
+chown -R $USERNAME:$USERNAME /home/$USERNAME/.ssh/
+chmod -R go-rwx /home/$USERNAME/.ssh/
+
+echo "Setting up WordPress..."
+mkdir -p /var/www/html/$USERNAME
+cp -R /root/wordpress/* /var/www/html/$USERNAME/
+chown -R www-data:$USERNAME /var/www/html/$USERNAME/
+ln -s /var/www/html/$USERNAME /home/$USERNAME/wordpress
+
+# Clone and update config file.
+cp ~/wordpress/wp-config-sample.php /var/www/html/$USERNAME/wp-config.php
+chown $USERNAME /var/www/html/$USERNAME/wp-config.php
+mkdir -p /var/www/html/$USERNAME/wp-content/uploads && chown www-data /var/www/html/$USERNAME/wp-content/uploads
+perl -pi.bak -e "s/database_name_here/wp_$USERNAME/" /var/www/html/$USERNAME/wp-config.php
+perl -pi.bak -e "s/username_here/wpdbuser/" /var/www/html/$USERNAME/wp-config.php
+perl -pi.bak -e "s/password_here/$DBP/" /var/www/html/$USERNAME/wp-config.php
+rm /var/www/html/$USERNAME/wp-config.php.bak
+curl --silent https://api.wordpress.org/secret-key/1.1/salt/ > /tmp/salts
+sed -i -e "/__SALTS__/r /tmp/salts" -e "//d" /var/www/html/$USERNAME/wp-config.php
+
+# Create database
+mysql -e "create database wp_$USERNAME"
+mysql -e "grant insert, update, delete, select, index, alter, drop, create on wp_$USERNAME.* to wpdbuser@localhost identified by '$DBP'"
+
+# Complete the install
+curl --output /tmp/out --silent --data "weblog_title=$SITE_TITLE&user_name=$USERNAME&admin_password=$WPP&admin_password2=$WPP&pw_weak=1&admin_email=$EMAIL&blog_public=0&language=en&submit=Submit" http://$DOMAIN/$USERNAME/wp-admin/install.php?step=2 
+
+echo "URL: http://$DOMAIN/$USERNAME/"
+echo "Don't forget to get the user's public key."
+echo "Done!"
